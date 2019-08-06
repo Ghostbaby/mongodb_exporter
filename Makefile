@@ -28,7 +28,7 @@ export BIN_NAME        := mongodb_exporter
 export TRAVIS_APP_HOST ?= $(shell hostname)
 export TRAVIS_BRANCH   ?= $(shell git describe --all --contains --dirty HEAD)
 export TRAVIS_TAG      ?= $(shell git describe --tags --abbrev=0)
-export GO_PACKAGE      := github.com/percona/mongodb_exporter
+export GO_PACKAGE      := github.com/ghostbaby/mongodb_exporter
 export APP_VERSION     := $(shell echo $(TRAVIS_TAG) | sed -e 's/v//g')
 export APP_REVISION    := $(shell git rev-parse HEAD)
 export BUILD_TIME      := $(shell date '+%Y%m%d-%H:%M:%S')

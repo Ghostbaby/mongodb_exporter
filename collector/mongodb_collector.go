@@ -24,9 +24,9 @@ import (
 	"github.com/prometheus/common/log"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/percona/mongodb_exporter/collector/mongod"
-	"github.com/percona/mongodb_exporter/collector/mongos"
-	"github.com/percona/mongodb_exporter/shared"
+	"github.com/ghostbaby/mongodb_exporter/collector/mongod"
+	"github.com/ghostbaby/mongodb_exporter/collector/mongos"
+	"github.com/ghostbaby/mongodb_exporter/shared"
 )
 
 const namespace = "mongodb"
@@ -123,9 +123,10 @@ func (exporter *MongodbCollector) getClient() *mongo.Client {
 	exporter.mongoSessLock.Lock()
 	defer exporter.mongoSessLock.Unlock()
 
-	if exporter.mongoClient == nil {
-		exporter.mongoClient = shared.MongoClient(exporter.Opts.toSessionOps())
-	}
+	//if exporter.mongoClient == nil {
+	//	exporter.mongoClient = shared.MongoClient(exporter.Opts.toSessionOps())
+	//}
+	exporter.mongoClient = shared.MongoClient(exporter.Opts.toSessionOps())
 	if exporter.mongoClient == nil {
 		return nil
 	}

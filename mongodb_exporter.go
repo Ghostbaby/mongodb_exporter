@@ -29,8 +29,8 @@ import (
 
 	pmmVersion "github.com/percona/pmm/version"
 
-	"github.com/percona/mongodb_exporter/collector"
-	"github.com/percona/mongodb_exporter/shared"
+	"github.com/ghostbaby/mongodb_exporter/collector"
+	"github.com/ghostbaby/mongodb_exporter/shared"
 )
 
 const (
@@ -99,11 +99,27 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Println(string(buildInfo))
+
+		//ServerStatus := mongod.TestServerStatus(
+		//	mongod.MongoSessionOpts{
+		//		URI:                   *uriF,
+		//		TLSConnection:         *tlsF,
+		//		TLSCertificateFile:    *tlsCertF,
+		//		TLSPrivateKeyFile:     *tlsPrivateKeyF,
+		//		TLSCaFile:             *tlsCAF,
+		//		TLSHostnameValidation: !(*tlsDisableHostnameValidationF),
+		//		AuthentificationDB:    *authDB,
+		//	},
+		//)
+		//if ServerStatus != nil {
+		//	log.Errorf("Can't get MongoDB Server Status: %s", ServerStatus)
+		//	os.Exit(1)
+		//}
 		os.Exit(0)
 	}
 
 	// TODO: Maybe we should move version.Info() and version.BuildContext() to https://github.com/percona/exporter_shared
-	// See: https://jira.percona.com/browse/PMM-3250 and https://github.com/percona/mongodb_exporter/pull/132#discussion_r262227248
+	// See: https://jira.percona.com/browse/PMM-3250 and https://github.com/ghostbaby/mongodb_exporter/pull/132#discussion_r262227248
 	log.Infoln("Starting", program, version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
@@ -135,7 +151,7 @@ func main() {
 // `--version` will be displayed in PMM format. Also `PMM Version` will be connected
 // to application version and will be printed in all logs.
 // TODO: Refactor after moving version.Info() and version.BuildContext() to https://github.com/percona/exporter_shared
-// See: https://jira.percona.com/browse/PMM-3250 and https://github.com/percona/mongodb_exporter/pull/132#discussion_r262227248
+// See: https://jira.percona.com/browse/PMM-3250 and https://github.com/ghostbaby/mongodb_exporter/pull/132#discussion_r262227248
 func initVersionInfo() {
 	version.Version = pmmVersion.Version
 	version.Revision = pmmVersion.FullCommit

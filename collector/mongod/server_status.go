@@ -22,7 +22,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	collector_common "github.com/percona/mongodb_exporter/collector/common"
+	"github.com/ghostbaby/mongodb_exporter/collector/common"
+	"fmt"
+	"time"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"strings"
+	"go.mongodb.org/mongo-driver/x/network/connstring"
 )
 
 // ServerStatus keeps the data returned by the serverStatus() method.
@@ -47,6 +53,7 @@ type ServerStatus struct {
 	RocksDb       *RocksDbStats       `bson:"rocksdb"`
 	WiredTiger    *WiredTigerStats    `bson:"wiredTiger"`
 }
+
 
 // Export exports the server status to be consumed by prometheus.
 func (status *ServerStatus) Export(ch chan<- prometheus.Metric) {
@@ -151,4 +158,94 @@ func GetServerStatus(client *mongo.Client) *ServerStatus {
 	}
 
 	return result
+}
+
+type MongoSessionOpts struct {
+	URI                   string
+	TLSConnection         bool
+	TLSCertificateFile    string
+	TLSPrivateKeyFile     string
+	TLSCaFile             string
+	TLSHostnameValidation bool
+	PoolLimit             int
+	SocketTimeout         time.Duration
+	SyncTimeout           time.Duration
+	AuthentificationDB    string
+}
+
+// MongoClient connects to MongoDB and returns ready to use MongoDB client.
+func MongoClient(opts *MongoSessionOpts) *mongo.Client {
+	if strings.Contains(opts.URI, "ssl=true") {
+		opts.URI = strings.Replace(opts.URI, "ssl=true", "", 1)
+		opts.TLSConnection = true
+	}
+
+	cOpts := options.Client().
+		ApplyURI(opts.URI).
+		SetDirect(true).
+		SetSocketTimeout(opts.SocketTimeout).
+		SetConnectTimeout(opts.SyncTimeout).
+		SetMaxPoolSize(uint16(opts.PoolLimit)).
+		SetReadPreference(readpref.Nearest())
+
+	if cOpts.Auth != nil {
+		cOpts.Auth.AuthSource = opts.AuthentificationDB
+	}
+
+	//err := opts.configureDialInfoIfRequired(cOpts)
+	//if err != nil {
+	//	log.Errorf("%s", err)
+	//	return nil
+	//}
+
+	client, err := mongo.NewClient(cOpts)
+	if err != nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), opts.SyncTimeout)
+	defer cancel()
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Errorf("Cannot connect to server using url %s: %s", RedactMongoUri(opts.URI), err)
+		return nil
+	}
+
+	return client
+}
+
+// RedactMongoUri removes login and password from mongoUri.
+func RedactMongoUri(uri string) string {
+	if strings.HasPrefix(uri, "mongodb://") && strings.Contains(uri, "@") {
+		if strings.Contains(uri, "ssl=true") {
+			uri = strings.Replace(uri, "ssl=true", "", 1)
+		}
+
+		cStr, err := connstring.Parse(uri)
+		if err != nil {
+			log.Errorf("Cannot parse mongodb server url: %s", err)
+			return "unknown/error"
+		}
+
+		if cStr.Username != "" && cStr.Password != "" {
+			uri = strings.Replace(uri, cStr.Username, "****", 1)
+			uri = strings.Replace(uri, cStr.Password, "****", 1)
+			return uri
+		}
+	}
+	return uri
+}
+
+// TestConnection connects to MongoDB and returns BuildInfo.
+func TestServerStatus(opts MongoSessionOpts) ( error) {
+	client := MongoClient(&opts)
+	if client == nil {
+		return fmt.Errorf("Cannot connect using uri: %s", opts.URI)
+	}
+	err := GetServerStatus(client)
+	if err == nil {
+		return fmt.Errorf("Cannot get Server Status for MongoDB using uri %s", opts.URI)
+	}
+
+	return nil
 }
