@@ -234,6 +234,7 @@ func (exporter *MongodbCollector) scrape(ch chan<- prometheus.Metric) {
 		err = fmt.Errorf("Unrecognized node type %s", nodeType)
 		log.Error(err)
 	}
+	exporter.Close()
 }
 
 func (exporter *MongodbCollector) collectMongos(client *mongo.Client, ch chan<- prometheus.Metric) {
